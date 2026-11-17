@@ -1,4 +1,4 @@
-﻿################################################################################
+################################################################################
 ## Initialization
 ################################################################################
 
@@ -27,6 +27,8 @@ style gui_text:
 
 style button:
     properties gui.button_properties("button")
+    hover_sound "ui/mouserelease1.ogg"
+    activate_sound "ui/click_003.ogg"
 
 style button_text is gui_text:
     properties gui.text_properties("button")
@@ -225,6 +227,8 @@ style choice_vbox:
 
 style choice_button is default:
     properties gui.button_properties("choice_button")
+    hover_sound "ui/mouserelease1.ogg"
+    activate_sound "ui/click_003.ogg"
 
 style choice_button_text is default:
     properties gui.text_properties("choice_button")
@@ -244,9 +248,7 @@ screen quick_menu():
 
         hbox:
             style_prefix "quick"
-
-            xalign 0.5
-            yalign 1.0
+            style "quick_menu"
 
             textbutton _("Back") action Rollback()
             textbutton _("History") action ShowMenu('history')
@@ -265,8 +267,13 @@ init python:
 
 default quick_menu = True
 
+style quick_menu is hbox
 style quick_button is default
 style quick_button_text is button_text
+
+style quick_menu:
+    xalign 0.5
+    yalign 1.0
 
 style quick_button:
     properties gui.button_properties("quick_button")
@@ -305,6 +312,8 @@ screen navigation():
             textbutton _("Save") action ShowMenu("save")
 
         textbutton _("Load") action ShowMenu("load")
+
+        textbutton _("Gallery") action ShowMenu("gallery")
 
         textbutton _("Preferences") action ShowMenu("preferences")
 
@@ -525,7 +534,7 @@ style game_menu_label:
     ysize 180
 
 style game_menu_label_text:
-    size gui.title_text_size
+    size 75
     color gui.accent_color
     yalign 0.5
 
@@ -700,6 +709,7 @@ style slot_name_text is slot_button_text
 style page_label:
     xpadding 75
     ypadding 5
+    xalign 0.5
 
 style page_label_text:
     textalign 0.5
@@ -1135,6 +1145,132 @@ style help_label_text:
 ################################################################################
 
 
+## Gallery screen ##############################################################
+##
+## This screen displays the CG gallery with unlocked images in a grid layout.
+
+screen gallery_button_item(button_name, label_text, unlock_image, locked_image=None):
+
+    frame:
+        xsize 200
+        ysize 200
+
+        has fixed:
+            add g.make_button(button_name, unlock_image, locked_image) xalign 0.5 yalign 0.3
+            text label_text:
+                size 20
+                xalign 0.5
+                yalign 1.0
+                yoffset -10
+                outlines [(2, "#000", 0, 0)]
+
+
+screen gallery():
+
+    tag menu
+
+    use game_menu(_("Gallery"), scroll="viewport"):
+
+        style_prefix "gallery"
+
+        python:
+            bg_gallery_items = [
+                ["bg_club", "bg club", "Club"],
+                ["bg_school", "bg lecturehall", "School"],
+                ["bg_meadow", "bg meadow", "Meadow"],
+            ]
+
+            eileen_gallery_items = [
+                ["eileen_concerned", "eileen concerned", "Concerned"],
+                ["eileen_happy", "eileen happy", "Happy"],
+                ["eileen_vhappy", "eileen vhappy", "Very Happy"],
+            ]
+
+            lucy_gallery_items = [
+                ["lucy", "lucy happy", "Lucy"],
+            ]
+
+            sylvie_gallery_items = [
+                ["sylvie_blue", "sylvie blue normal", "Sylvie Blue"],
+                ["sylvie_green", "sylvie green normal", "Sylvie Green"],
+            ]
+
+        vbox:
+            spacing 20
+
+            ## Backgrounds section
+            label _("Backgrounds")
+            null height 10
+
+            grid 3 1:
+                spacing 10
+
+                for button_name, image, label_text in bg_gallery_items:
+                    use gallery_button_item(
+                        button_name,
+                        label_text,
+                        gallery_thumb(image),
+                        gallery_locked_thumb(image),
+                    )
+
+            null height 30
+
+            ## Eileen section
+            label _("Eileen")
+            null height 10
+
+            grid 3 1:
+                spacing 10
+
+                for button_name, image, label_text in eileen_gallery_items:
+                    use gallery_button_item(
+                        button_name,
+                        label_text,
+                        gallery_thumb(image),
+                        gallery_locked_thumb(image),
+                    )
+
+            null height 30
+
+            ## Lucy section
+            label _("Lucy")
+            null height 10
+
+            grid 3 1:
+                spacing 10
+
+                for button_name, image, label_text in lucy_gallery_items:
+                    use gallery_button_item(
+                        button_name,
+                        label_text,
+                        gallery_thumb(image),
+                        # Show lock image
+                        locked_image=None,
+                    )
+
+            null height 30
+
+            ## Sylvie section
+            label _("Sylvie")
+            null height 10
+
+            grid 3 1:
+                spacing 10
+
+                for button_name, image, label_text in sylvie_gallery_items:
+                    use gallery_button_item(
+                        button_name,
+                        label_text,
+                        gallery_thumb(image),
+                        gallery_locked_thumb(image),
+                    )
+
+            if not persistent.unlock_with_password:
+                textbutton _("Unlock Sylvie Green with password"):
+                    action Function(unlock_gallery_image_with_password)
+                    text_size 24
+
+
 ## Confirm screen ##############################################################
 ##
 ## The confirm screen is called when Ren'Py wants to ask the player a yes or no
@@ -1438,6 +1574,10 @@ screen bubble(who, what):
         text what:
             id "what"
 
+        default ctc = None
+        showif ctc:
+            add ctc
+
 style bubble_window is empty
 style bubble_namebox is empty
 style bubble_who is default
@@ -1519,10 +1659,8 @@ screen quick_menu():
     if quick_menu:
 
         hbox:
+            style "quick_menu"
             style_prefix "quick"
-
-            xalign 0.5
-            yalign 1.0
 
             textbutton _("Back") action Rollback()
             textbutton _("Skip") action Skip() alternate Skip(fast=True, confirm=True)
@@ -1561,6 +1699,10 @@ style game_menu_navigation_frame:
 style game_menu_content_frame:
     variant "small"
     top_margin 0
+
+style game_menu_viewport:
+    variant "small"
+    xsize 1305
 
 style pref_vbox:
     variant "small"
